@@ -21,9 +21,7 @@ public class PostService {
         return postRepository.findAll();
     }
 
-    public Post createPost(Post post) {
-        return postRepository.save(post);
-    }
+
 
     public PostResponseDTO createPost(CreatePostDTO dto) {
         //TODO: once oauth is setup, allow for posts authors to be fetched.
@@ -41,7 +39,7 @@ public class PostService {
     private PostResponseDTO convertToDTO(Post post) {
         PostResponseDTO dto = new PostResponseDTO();
         dto.setPostId(post.getPostId());
-        dto.setUsername(post.getUser().getUsername());
+        dto.setUsername(post.getUser() != null ? post.getUser().getUsername() : "unknown"); // null check
         dto.setTitle(post.getTitle());
         dto.setDescription(post.getDescription());
         dto.setContentUrl(post.getContentUrl());

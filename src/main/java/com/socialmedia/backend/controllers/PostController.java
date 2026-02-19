@@ -1,5 +1,7 @@
 package com.socialmedia.backend.controllers;
 
+import com.socialmedia.backend.dtos.CreatePostDTO;
+import com.socialmedia.backend.dtos.PostResponseDTO;
 import com.socialmedia.backend.entities.Post;
 import com.socialmedia.backend.services.PostService;
 import org.apache.coyote.Response;
@@ -26,8 +28,8 @@ public class PostController {
     }
 
     @PostMapping
-    public ResponseEntity<Post> createPost(@RequestBody Post post) {
-        return ResponseEntity.ok(postService.createPost(post));
+    public ResponseEntity<PostResponseDTO> createPost(@RequestBody CreatePostDTO dto) {
+        return ResponseEntity.ok(postService.createPost(dto));
     }
 
 }
