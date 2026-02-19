@@ -36,6 +36,20 @@ public class PostService {
         return convertToDTO(postRepository.save(post));
     }
 
+    public PostResponseDTO getPostById(Long id) {
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+        return convertToDTO(post);
+    }
+
+    //TODO: ENSURE THAT ONLY OWNER CAN DELETE POST
+    public void deletePost(Long id) {
+        if (!postRepository.existsById(id)) {
+            throw new RuntimeException("Post not found");
+        }
+        postRepository.deleteById(id);
+    }
+
     private PostResponseDTO convertToDTO(Post post) {
         PostResponseDTO dto = new PostResponseDTO();
         dto.setPostId(post.getPostId());
