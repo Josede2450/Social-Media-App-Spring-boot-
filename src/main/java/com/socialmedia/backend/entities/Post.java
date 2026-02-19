@@ -19,7 +19,7 @@ public class Post {
     private Long postId;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = true)
     private User user;
 
     private String title;
