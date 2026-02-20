@@ -18,6 +18,8 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long postId;
 
+
+    //TODO: change nullable = true when users implemented
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = true)
     private User user;
