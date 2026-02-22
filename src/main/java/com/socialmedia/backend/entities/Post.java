@@ -2,6 +2,7 @@ package com.socialmedia.backend.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -18,10 +19,9 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long postId;
 
-
-    //TODO: change nullable = true when users implemented
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = true)
+    // Each post belongs to ONE user
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     private String title;
@@ -33,9 +33,9 @@ public class Post {
 
     private LocalDateTime createdDate;
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments;
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Like> likes;
 }

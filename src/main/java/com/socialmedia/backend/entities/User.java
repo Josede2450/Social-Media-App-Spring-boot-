@@ -18,18 +18,23 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
 
-    @Column(nullable = false, unique = true)
-    private String googleId;
-
-    @Column(nullable = false, unique = true)
-    private String email;
-
-    private String firstName;
-    private String lastName;
 
     @Column(unique = true)
     private String username;
 
+    @Column(nullable = false)
+    private String password;
+
+
+    @Column(nullable = false, unique = true)
+    private String email;
+
+
+    @Column(unique = true, nullable = true)
+    private String googleId;
+
+    private String firstName;
+    private String lastName;
     private String phoneNumber;
 
     @Column(length = 500)
@@ -37,13 +42,18 @@ public class User {
 
     private String profilePictureUrl;
 
-    private String role;
+    @Builder.Default
+    private String role = "USER";
 
     private LocalDateTime dateCreated;
-
     private LocalDateTime lastLogin;
 
     // Relationships
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Post> posts;
+
+    @PrePersist
+    protected void onCreate() {
+        dateCreated = LocalDateTime.now();
+    }
 }
