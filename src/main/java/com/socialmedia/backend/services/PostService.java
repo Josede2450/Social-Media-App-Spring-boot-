@@ -1,65 +1,121 @@
 package com.socialmedia.backend.services;
 
-import com.socialmedia.backend.dtos.CreatePostDTO;
+import com.socialmedia.backend.dtos.PostRequestDTO;
 import com.socialmedia.backend.dtos.PostResponseDTO;
 import com.socialmedia.backend.entities.Post;
 import com.socialmedia.backend.entities.User;
 import com.socialmedia.backend.repositories.PostRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.socialmedia.backend.repositories.UserRepository;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class PostService {
 
-    @Autowired
-    private PostRepository postRepository;
+    private final PostRepository postRepository;
+    private final UserRepository userRepository;
 
-    public List<Post> getAllPosts() {
-        return postRepository.findAll();
+    public PostService(PostRepository postRepository,
+                       UserRepository userRepository) {
+        this.postRepository = postRepository;
+        this.userRepository = userRepository;
     }
 
+    // CREATE POST
+    @Transactional
+    public PostResponseDTO createPost(PostRequestDTO request,
+                                      Authentication authentication) {
 
+        User user = getAuthenticatedUser(authentication);
 
-    public PostResponseDTO createPost(CreatePostDTO dto) {
-        //TODO: once oauth is setup, allow for posts authors to be fetched.
+        Post post = new Post();
+        post.setTitle(request.getTitle());
+        post.setDescription(request.getDescription());
+        post.setContentUrl(request.getContentUrl());
+        post.setCreatedDate(LocalDateTime.now());
+        post.setUser(user);
 
-        Post post = Post.builder()
-                .title(dto.getTitle())
-                .description(dto.getDescription())
-                .contentUrl(dto.getContentUrl())
-                .createdDate(LocalDateTime.now())
-                .build();
+        postRepository.save(post);
 
-        return convertToDTO(postRepository.save(post));
+        return buildPostResponse(post);
     }
 
-    public PostResponseDTO getPostById(Long id) {
-        Post post = postRepository.findById(id)
+    // GET ALL POSTS
+    @Transactional(readOnly = true)
+    public List<PostResponseDTO> getAllPosts() {
+        return postRepository.findAll()
+                .stream()
+                .map(this::buildPostResponse)
+                .collect(Collectors.toList());
+    }
+
+    // GET POST BY ID
+    @Transactional(readOnly = true)
+    public PostResponseDTO getPostById(Long postId) {
+
+        Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
-        return convertToDTO(post);
+
+        return buildPostResponse(post);
     }
 
-    //TODO: ENSURE THAT ONLY OWNER CAN DELETE POST
-    public void deletePost(Long id) {
-        if (!postRepository.existsById(id)) {
-            throw new RuntimeException("Post not found");
+    // DELETE POST (OWNER ONLY)
+    @Transactional
+    public void deletePost(Long postId, Authentication authentication) {
+
+        User user = getAuthenticatedUser(authentication);
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        if (!post.getUser().getUserId().equals(user.getUserId())) {
+            throw new RuntimeException("You are not allowed to delete this post");
         }
-        postRepository.deleteById(id);
+
+        postRepository.delete(post);
     }
 
-    private PostResponseDTO convertToDTO(Post post) {
+    // HELPER: BUILD DTO
+    private PostResponseDTO buildPostResponse(Post post) {
+
         PostResponseDTO dto = new PostResponseDTO();
+
         dto.setPostId(post.getPostId());
-        dto.setUsername(post.getUser() != null ? post.getUser().getUsername() : "unknown"); // null check
+        dto.setUsername(post.getUser().getUsername()); // or getEmail()
         dto.setTitle(post.getTitle());
         dto.setDescription(post.getDescription());
         dto.setContentUrl(post.getContentUrl());
         dto.setCreatedDate(post.getCreatedDate());
-        dto.setCommentCount(post.getComments() != null ? post.getComments().size() : 0);
-        dto.setLikeCount(post.getLikes() != null ? post.getLikes().size() : 0);
+
+        dto.setCommentCount(
+                post.getComments() == null ? 0 : post.getComments().size()
+        );
+
+        dto.setLikeCount(
+                post.getLikes() == null ? 0 : post.getLikes().size()
+        );
+
         return dto;
+    }
+
+    // HELPER: GET AUTHENTICATED USER
+    private User getAuthenticatedUser(Authentication authentication) {
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("User not authenticated");
+        }
+
+        OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
+        String googleId = oauthUser.getAttribute("sub");
+
+        return userRepository.findByGoogleId(googleId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 }
