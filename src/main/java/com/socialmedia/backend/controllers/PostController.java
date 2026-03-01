@@ -2,31 +2,33 @@ package com.socialmedia.backend.controllers;
 
 import com.socialmedia.backend.dtos.CreatePostDTO;
 import com.socialmedia.backend.dtos.PostResponseDTO;
-import com.socialmedia.backend.entities.Post;
 import com.socialmedia.backend.services.PostService;
-import org.apache.coyote.Response;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 
-@Controller
+@RestController
 @RequestMapping("/api/posts")
+@RequiredArgsConstructor
 public class PostController {
 
-    @Autowired
-    private PostService postService;
+    private final PostService postService;
 
     @GetMapping
-    public ResponseEntity<List<Post>> getAllPosts() {
+    public ResponseEntity<List<PostResponseDTO>> getAllPosts() {
         return ResponseEntity.ok(postService.getAllPosts());
     }
 
     @PostMapping
     public ResponseEntity<PostResponseDTO> createPost(@RequestBody CreatePostDTO dto) {
-        return ResponseEntity.ok(postService.createPost(dto));
+        PostResponseDTO created = postService.createPost(dto);
+
+        return ResponseEntity
+                .created(URI.create("/api/posts/" + created.getPostId()))
+                .body(created);
     }
 
     @GetMapping("/{id}")

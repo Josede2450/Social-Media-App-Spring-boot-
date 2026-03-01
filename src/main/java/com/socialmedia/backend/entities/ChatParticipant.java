@@ -4,8 +4,10 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "chat_participants",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"chat_id", "user_id"}))
+@Table(
+        name = "chat_participants",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"chat_id", "user_id"})
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -17,11 +19,11 @@ public class ChatParticipant {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long chatParticipantId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chat_id", nullable = false)
     private Chat chat;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 }

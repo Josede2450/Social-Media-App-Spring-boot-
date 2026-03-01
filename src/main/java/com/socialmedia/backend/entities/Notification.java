@@ -17,13 +17,21 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long notificationId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    private String type;
+    @Column(nullable = false)
+    private String type; // FOLLOW, LIKE, COMMENT
 
+    @Column(nullable = false)
     private String message;
 
+    @Column(nullable = false)
     private LocalDateTime createdDate;
+
+    @PrePersist
+    public void prePersist() {
+        this.createdDate = LocalDateTime.now();
+    }
 }

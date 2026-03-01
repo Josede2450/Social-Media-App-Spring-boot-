@@ -18,9 +18,11 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
 
-    @Column(nullable = false, unique = true)
+    // 🔥 Nullable for now (OAuth will fill this later)
+    @Column(unique = true)
     private String googleId;
 
+    // Email should stay required
     @Column(nullable = false, unique = true)
     private String email;
 
@@ -46,4 +48,10 @@ public class User {
     // Relationships
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Post> posts;
+
+    // 🔥 Automatically set creation time
+    @PrePersist
+    public void prePersist() {
+        this.dateCreated = LocalDateTime.now();
+    }
 }

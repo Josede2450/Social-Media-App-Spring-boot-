@@ -1,14 +1,17 @@
 package com.socialmedia.backend.dtos;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class PostResponseDTO {
+
     private Long postId;
-    private String username;   // from the User object, not the whole User
+    private String username;
     private String title;
     private String description;
     private String contentUrl;
