@@ -4,6 +4,7 @@ import com.socialmedia.backend.dtos.CommentDTO.CommentRequest;
 import com.socialmedia.backend.dtos.CommentDTO.CommentResponse;
 import com.socialmedia.backend.entities.Comment;
 import com.socialmedia.backend.entities.Post;
+import com.socialmedia.backend.entities.User;
 import com.socialmedia.backend.repositories.CommentRepository;
 import com.socialmedia.backend.repositories.PostRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ public class CommentService {
 
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
+    private final UserService userService; // ✅ Inject UserService
 
     public CommentResponse addComment(Long postId, CommentRequest request) {
 
@@ -28,11 +30,17 @@ public class CommentService {
         }
 
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found")
+                );
+
+        // ✅ Get authenticated user
+        User currentUser = userService.getCurrentAuthenticatedUser();
 
         Comment comment = Comment.builder()
                 .content(request.getContent())
                 .post(post)
+                .user(currentUser) // ✅ Attach user to comment
                 .createdDate(LocalDateTime.now())
                 .build();
 
@@ -56,7 +64,9 @@ public class CommentService {
     public CommentResponse getCommentById(Long postId, Long commentId) {
 
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found"));
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found")
+                );
 
         if (!comment.getPost().getPostId().equals(postId)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Comment does not belong to this post");
@@ -68,10 +78,19 @@ public class CommentService {
     public void deleteComment(Long postId, Long commentId) {
 
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found"));
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found")
+                );
 
         if (!comment.getPost().getPostId().equals(postId)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Comment does not belong to this post");
+        }
+
+        // ✅ Only owner can delete
+        User currentUser = userService.getCurrentAuthenticatedUser();
+
+        if (!comment.getUser().getUserId().equals(currentUser.getUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot delete this comment");
         }
 
         commentRepository.delete(comment);
@@ -82,6 +101,7 @@ public class CommentService {
                 .id(comment.getCommentId())
                 .content(comment.getContent())
                 .postId(comment.getPost().getPostId())
+                .username(comment.getUser().getUsername()) // Optional if your DTO supports it
                 .build();
     }
 }

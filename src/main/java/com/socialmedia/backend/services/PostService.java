@@ -5,7 +5,6 @@ import com.socialmedia.backend.dtos.PostResponseDTO;
 import com.socialmedia.backend.entities.Post;
 import com.socialmedia.backend.entities.User;
 import com.socialmedia.backend.repositories.PostRepository;
-import com.socialmedia.backend.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +16,7 @@ import java.util.List;
 public class PostService {
 
     private final PostRepository postRepository;
-    private final UserRepository userRepository;
+    private final UserService userService; // ✅ Inject UserService instead
 
     public List<PostResponseDTO> getAllPosts() {
         return postRepository.findAll()
@@ -28,16 +27,15 @@ public class PostService {
 
     public PostResponseDTO createPost(CreatePostDTO dto) {
 
-        // 🔥 Temporary default user (until OAuth is implemented)
-        User defaultUser = userRepository.findById(1L)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        // ✅ Get currently authenticated user from SecurityContext
+        User currentUser = userService.getCurrentAuthenticatedUser();
 
         Post post = Post.builder()
                 .title(dto.getTitle())
                 .description(dto.getDescription())
                 .contentUrl(dto.getContentUrl())
                 .createdDate(LocalDateTime.now())
-                .user(defaultUser) // ✅ REQUIRED
+                .user(currentUser) // ✅ Real logged-in user
                 .build();
 
         Post saved = postRepository.save(post);

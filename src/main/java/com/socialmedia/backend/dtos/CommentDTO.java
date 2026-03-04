@@ -11,6 +11,7 @@ public class CommentDTO {
     @AllArgsConstructor
     @Builder
     public static class CommentRequest {
+
         @NotBlank(message = "Comment cannot be empty")
         private String content;
     }
@@ -21,8 +22,11 @@ public class CommentDTO {
     @AllArgsConstructor
     @Builder
     public static class CommentResponse {
+
         private Long id;
         private String content;
         private Long postId;
+
+        private String username; // ✅ ADD THIS
     }
 }

@@ -18,10 +18,17 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        // Public endpoints
+                        .requestMatchers("/", "/login", "/oauth2/**").permitAll()
+
+                        // Protect API endpoints
+                        .requestMatchers("/api/**").authenticated()
+
+                        // Everything else
                         .anyRequest().permitAll()
                 )
                 .oauth2Login(oauth -> oauth
-                        .successHandler(successHandler)  // 🔥 connect handler
+                        .successHandler(successHandler)
                 );
 
         return http.build();
