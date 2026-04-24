@@ -3,9 +3,11 @@ package com.socialmedia.backend.services;
 import com.socialmedia.backend.dtos.CommentDTO.CommentRequest;
 import com.socialmedia.backend.dtos.CommentDTO.CommentResponse;
 import com.socialmedia.backend.entities.Comment;
+import com.socialmedia.backend.entities.Notification;
 import com.socialmedia.backend.entities.Post;
 import com.socialmedia.backend.entities.User;
 import com.socialmedia.backend.repositories.CommentRepository;
+import com.socialmedia.backend.repositories.NotificationRepository;
 import com.socialmedia.backend.repositories.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,7 +23,8 @@ public class CommentService {
 
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
-    private final UserService userService; // ✅ Inject UserService
+    private final UserService userService;
+    private final NotificationRepository notificationRepository;
 
     public CommentResponse addComment(Long postId, CommentRequest request) {
 
@@ -34,17 +37,28 @@ public class CommentService {
                         new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found")
                 );
 
-        // ✅ Get authenticated user
         User currentUser = userService.getCurrentAuthenticatedUser();
 
         Comment comment = Comment.builder()
                 .content(request.getContent())
                 .post(post)
-                .user(currentUser) // ✅ Attach user to comment
-                .createdDate(LocalDateTime.now())
+                .user(currentUser)
                 .build();
 
         Comment saved = commentRepository.save(comment);
+
+        User postOwner = post.getUser();
+
+        if (!postOwner.getUserId().equals(currentUser.getUserId())) {
+            Notification notification = Notification.builder()
+                    .user(postOwner)
+                    .message(currentUser.getUsername() + " commented on your post")
+                    .type("COMMENT")
+                    .createdDate(LocalDateTime.now())
+                    .build();
+
+            notificationRepository.save(notification);
+        }
 
         return toResponse(saved);
     }
@@ -86,7 +100,6 @@ public class CommentService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Comment does not belong to this post");
         }
 
-        // ✅ Only owner can delete
         User currentUser = userService.getCurrentAuthenticatedUser();
 
         if (!comment.getUser().getUserId().equals(currentUser.getUserId())) {
@@ -101,7 +114,12 @@ public class CommentService {
                 .id(comment.getCommentId())
                 .content(comment.getContent())
                 .postId(comment.getPost().getPostId())
-                .username(comment.getUser().getUsername()) // Optional if your DTO supports it
+                .createdDate(comment.getCreatedDate())
+                .userId(comment.getUser().getUserId())
+                .username(comment.getUser().getUsername())
+                .firstName(comment.getUser().getFirstName())
+                .lastName(comment.getUser().getLastName())
+                .profilePictureUrl(comment.getUser().getProfilePictureUrl())
                 .build();
     }
 }

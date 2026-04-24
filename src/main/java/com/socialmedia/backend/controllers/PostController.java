@@ -1,11 +1,12 @@
 package com.socialmedia.backend.controllers;
 
-import com.socialmedia.backend.dtos.CreatePostDTO;
 import com.socialmedia.backend.dtos.PostResponseDTO;
 import com.socialmedia.backend.services.PostService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
 import java.util.List;
@@ -22,9 +23,13 @@ public class PostController {
         return ResponseEntity.ok(postService.getAllPosts());
     }
 
-    @PostMapping
-    public ResponseEntity<PostResponseDTO> createPost(@RequestBody CreatePostDTO dto) {
-        PostResponseDTO created = postService.createPost(dto);
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<PostResponseDTO> createPost(
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) String description,
+            @RequestPart(required = false) MultipartFile image) {
+
+        PostResponseDTO created = postService.createPost(title, description, image);
 
         return ResponseEntity
                 .created(URI.create("/api/posts/" + created.getPostId()))
@@ -34,6 +39,16 @@ public class PostController {
     @GetMapping("/{id}")
     public ResponseEntity<PostResponseDTO> getPostById(@PathVariable Long id) {
         return ResponseEntity.ok(postService.getPostById(id));
+    }
+
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<PostResponseDTO> updatePost(
+            @PathVariable Long id,
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) String description,
+            @RequestPart(required = false) MultipartFile image) {
+
+        return ResponseEntity.ok(postService.updatePost(id, title, description, image));
     }
 
     @DeleteMapping("/{id}")

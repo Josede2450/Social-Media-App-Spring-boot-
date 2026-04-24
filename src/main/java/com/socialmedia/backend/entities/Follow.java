@@ -1,5 +1,6 @@
 package com.socialmedia.backend.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -20,16 +21,18 @@ public class Follow {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long followId;
 
+    @JsonIgnore // ✅ prevent infinite loop
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "follower_id", nullable = false)
     private User follower;
 
+    @JsonIgnore // ✅ prevent infinite loop
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "following_id", nullable = false)
     private User following;
 
     @Column(nullable = false)
-    private String status; // PENDING, ACCEPTED
+    private String status;
 
     @Column(nullable = false)
     private LocalDateTime createdDate;
@@ -37,6 +40,6 @@ public class Follow {
     @PrePersist
     public void prePersist() {
         this.createdDate = LocalDateTime.now();
-        this.status = "ACCEPTED"; // default public profile behavior
+        this.status = "ACCEPTED";
     }
 }

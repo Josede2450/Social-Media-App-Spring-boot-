@@ -17,6 +17,8 @@ public class UserDTO {
     @Getter
     @Setter
     @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class UserResponse {
         private Long userId;
         private String googleId;
@@ -24,5 +26,14 @@ public class UserDTO {
         private String firstName;
         private String lastName;
         private String username;
+        private String bio;
+        private String profilePictureUrl;
+
+        // ✅ NEW FIELD
+        private String role;
+
+        private Integer followerCount;
+        private Integer followingCount;
+        private Integer postCount;
     }
 }

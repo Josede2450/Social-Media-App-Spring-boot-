@@ -23,7 +23,6 @@ public class Comment {
     @JsonIgnore
     private Post post;
 
-    //TODO: change nullable=false when users implemented
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = true)
     private User user;
@@ -32,4 +31,9 @@ public class Comment {
     private String content;
 
     private LocalDateTime createdDate;
+
+    @PrePersist
+    public void prePersist() {
+        this.createdDate = LocalDateTime.now();
+    }
 }

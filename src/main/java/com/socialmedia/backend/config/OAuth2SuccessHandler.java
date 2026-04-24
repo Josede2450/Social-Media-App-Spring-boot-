@@ -2,7 +2,6 @@ package com.socialmedia.backend.config;
 
 import com.socialmedia.backend.entities.User;
 import com.socialmedia.backend.repositories.UserRepository;
-import com.socialmedia.backend.services.JwtService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,7 +20,6 @@ import java.util.Optional;
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final UserRepository userRepository;
-    private final JwtService jwtService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -34,13 +32,13 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         String googleId = oAuth2User.getAttribute("sub");
         String email = oAuth2User.getAttribute("email");
         String fullName = oAuth2User.getAttribute("name");
+        String picture = oAuth2User.getAttribute("picture");
 
-        // Split name safely
         String firstName = "";
         String lastName = "";
 
-        if (fullName != null) {
-            String[] parts = fullName.split(" ", 2);
+        if (fullName != null && !fullName.isBlank()) {
+            String[] parts = fullName.trim().split(" ", 2);
             firstName = parts[0];
             if (parts.length > 1) {
                 lastName = parts[1];
@@ -52,19 +50,30 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         User user;
 
         if (existingUser.isPresent()) {
-
             user = existingUser.get();
+
             user.setLastLogin(LocalDateTime.now());
+
+            if (user.getGoogleId() == null || user.getGoogleId().isBlank()) {
+                user.setGoogleId(googleId);
+            }
+
+            // Only use Google image if user still does not have a profile picture
+            if ((user.getProfilePictureUrl() == null || user.getProfilePictureUrl().isBlank())
+                    && picture != null
+                    && !picture.isBlank()) {
+                user.setProfilePictureUrl(picture);
+            }
+
             userRepository.save(user);
-
         } else {
-
             user = User.builder()
                     .email(email)
-                    .username(email.split("@")[0])  // auto username
+                    .username(email.split("@")[0])
                     .firstName(firstName)
                     .lastName(lastName)
                     .googleId(googleId)
+                    .profilePictureUrl(picture)
                     .role("USER")
                     .lastLogin(LocalDateTime.now())
                     .build();
@@ -72,9 +81,6 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             userRepository.save(user);
         }
 
-        String token = jwtService.generateToken(email);
-
-        response.setContentType("application/json");
-        response.getWriter().write("{\"token\":\"" + token + "\"}");
+        response.sendRedirect("http://localhost:3000/home");
     }
 }

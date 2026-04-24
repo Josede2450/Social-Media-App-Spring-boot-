@@ -3,6 +3,8 @@ package com.socialmedia.backend.dtos;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 public class CommentDTO {
 
     @Getter
@@ -26,7 +28,12 @@ public class CommentDTO {
         private Long id;
         private String content;
         private Long postId;
+        private LocalDateTime createdDate;
 
-        private String username; // ✅ ADD THIS
+        private Long userId;
+        private String username;
+        private String firstName;
+        private String lastName;
+        private String profilePictureUrl;
     }
 }

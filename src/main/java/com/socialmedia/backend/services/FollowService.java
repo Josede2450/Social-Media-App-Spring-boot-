@@ -1,7 +1,12 @@
 package com.socialmedia.backend.services;
 
-import com.socialmedia.backend.entities.*;
-import com.socialmedia.backend.repositories.*;
+import com.socialmedia.backend.dtos.FollowUserResponseDTO;
+import com.socialmedia.backend.entities.Follow;
+import com.socialmedia.backend.entities.Notification;
+import com.socialmedia.backend.entities.User;
+import com.socialmedia.backend.repositories.FollowRepository;
+import com.socialmedia.backend.repositories.NotificationRepository;
+import com.socialmedia.backend.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -9,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -18,7 +24,7 @@ public class FollowService {
     private final FollowRepository followRepository;
     private final UserRepository userRepository;
     private final NotificationRepository notificationRepository;
-    private final UserService userService; // ✅ Add this
+    private final UserService userService;
 
     public void followUser(Long followingId) {
 
@@ -47,7 +53,6 @@ public class FollowService {
 
         followRepository.save(follow);
 
-        // 🔔 Create notification for target user
         Notification notification = Notification.builder()
                 .user(targetUser)
                 .type("FOLLOW")
@@ -73,5 +78,53 @@ public class FollowService {
                 currentUser.getUserId(),
                 followingId
         );
+    }
+
+    public boolean isFollowing(Long followingId) {
+
+        User currentUser = userService.getCurrentAuthenticatedUser();
+
+        return followRepository.existsByFollowerUserIdAndFollowingUserId(
+                currentUser.getUserId(),
+                followingId
+        );
+    }
+
+    // ✅ FIXED: Returns DTO instead of User
+    public List<FollowUserResponseDTO> getFollowers(Long userId) {
+
+        if (!userRepository.existsById(userId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
+
+        return followRepository.findByFollowingUserId(userId)
+                .stream()
+                .map(f -> FollowUserResponseDTO.builder()
+                        .userId(f.getFollower().getUserId())
+                        .username(f.getFollower().getUsername())
+                        .firstName(f.getFollower().getFirstName())
+                        .lastName(f.getFollower().getLastName())
+                        .profilePictureUrl(f.getFollower().getProfilePictureUrl())
+                        .build())
+                .toList();
+    }
+
+    // ✅ FIXED: Returns DTO instead of User
+    public List<FollowUserResponseDTO> getFollowing(Long userId) {
+
+        if (!userRepository.existsById(userId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
+
+        return followRepository.findByFollowerUserId(userId)
+                .stream()
+                .map(f -> FollowUserResponseDTO.builder()
+                        .userId(f.getFollowing().getUserId())
+                        .username(f.getFollowing().getUsername())
+                        .firstName(f.getFollowing().getFirstName())
+                        .lastName(f.getFollowing().getLastName())
+                        .profilePictureUrl(f.getFollowing().getProfilePictureUrl())
+                        .build())
+                .toList();
     }
 }

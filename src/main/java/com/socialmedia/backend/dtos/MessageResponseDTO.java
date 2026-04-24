@@ -13,6 +13,8 @@ public class MessageResponseDTO {
     private Long messageId;
     private Long senderId;
     private String senderUsername;
+    private String senderFirstName;
+    private String senderLastName;
     private String content;
     private LocalDateTime createdDate;
 }
